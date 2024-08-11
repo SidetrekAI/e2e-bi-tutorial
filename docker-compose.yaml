@@ -1,0 +1,93 @@
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    command: server --address "0.0.0.0:9000" --console-address "0.0.0.0:9001" /data
+    restart: always
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+      - MINIO_DOMAIN=minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio_data:/data
+    networks:
+      shared_network:
+        aliases:
+          - ${LAKEHOUSE_NAME}.minio
+  mc:
+    image: minio/mc
+    container_name: mc
+    hostname: mc
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    entrypoint: >-
+      /bin/sh -c "
+
+      until (/usr/bin/mc config host add minio ${S3_ENDPOINT}
+      ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY}) do echo ...waiting... &&
+      sleep 1; done;
+
+      /usr/bin/mc mb minio/${LAKEHOUSE_NAME};
+
+      /usr/bin/mc policy set public minio/${LAKEHOUSE_NAME};
+
+      tail -f /dev/null;
+
+      "
+    networks:
+      - shared_network
+    depends_on:
+      - minio
+  iceberg-rest:
+    image: tabulario/iceberg-rest
+    container_name: iceberg_rest
+    ports:
+      - 8181:8181
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - CATALOG_WAREHOUSE=s3a://${LAKEHOUSE_NAME}/
+      - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+      - CATALOG_S3_ENDPOINT=${S3_ENDPOINT}
+      - CATALOG_CATALOG__IMPL=org.apache.iceberg.jdbc.JdbcCatalog
+      - CATALOG_URI=jdbc:postgresql://iceberg-pg-catalog:5432/${ICEBERG_PG_CATALOG_DB}
+      - CATALOG_JDBC_USER=${ICEBERG_PG_CATALOG_USER}
+      - CATALOG_JDBC_PASSWORD=${ICEBERG_PG_CATALOG_PASSWORD}
+    networks:
+      - shared_network
+    depends_on:
+      iceberg-pg-catalog:
+        condition: service_healthy
+        restart: true
+  iceberg-pg-catalog:
+    image: postgres:15-alpine
+    container_name: iceberg_pg_catalog
+    environment:
+      - POSTGRES_USER=${ICEBERG_PG_CATALOG_USER}
+      - POSTGRES_PASSWORD=${ICEBERG_PG_CATALOG_PASSWORD}
+      - POSTGRES_DB=${ICEBERG_PG_CATALOG_DB}
+    healthcheck:
+      test:
+        - CMD
+        - pg_isready
+        - -U
+        - ${ICEBERG_PG_CATALOG_USER}
+      interval: 5s
+      retries: 5
+    ports:
+      - 5433:5432
+    volumes:
+      - iceberg_pg_catalog_data:/var/lib/postgresql/data
+    networks:
+      - shared_network
+volumes:
+  minio_data: null
+  iceberg_pg_catalog_data: null
+networks:
+  shared_network:
+    driver: bridge
