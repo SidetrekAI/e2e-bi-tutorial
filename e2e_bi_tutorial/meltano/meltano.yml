@@ -1,0 +1,28 @@
+version: 1
+default_environment: dev
+project_id: 3782ccd1-c0d1-4bf8-8540-37078b2a8a40
+environments:
+- name: dev
+- name: staging
+- name: prod
+plugins:
+  extractors:
+  - name: tap-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+    config:
+      csv_files_definition: extract/example_csv_files_def.json
+  loaders:
+    - name: target-iceberg
+      namespace: target_iceberg
+      pip_url: git+https://github.com/SidetrekAI/target-iceberg
+      executable: target-iceberg
+      config:
+        add_record_metadata: true
+        aws_access_key_id: $AWS_ACCESS_KEY_ID
+        aws_secret_access_key: $AWS_SECRET_ACCESS_KEY
+        s3_endpoint: http://localhost:9000
+        s3_bucket: lakehouse
+        iceberg_rest_uri: http://localhost:8181
+        iceberg_catalog_name: icebergcatalog
+        iceberg_catalog_namespace_name: raw
