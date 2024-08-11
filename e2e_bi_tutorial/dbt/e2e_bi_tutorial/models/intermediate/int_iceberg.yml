@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: int_iceberg
+    database: iceberg
+    schema: project_staging
+    tables:
+      - name: stg_iceberg__orders
+      - name: stg_iceberg__customers
+      - name: stg_iceberg__products
+      - name: stg_iceberg__stores
+
+models:
+  - name: int_iceberg__denormalized_orders

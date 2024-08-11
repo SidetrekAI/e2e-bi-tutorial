@@ -1,0 +1,14 @@
+dbt_project:
+  target: trino
+  outputs:
+    trino:
+      type: trino
+      user: trino
+      host: localhost
+      port: 8080
+      database: iceberg
+      schema: project
+      http_scheme: http
+      threads: 1
+      session_properties:
+        query_max_run_time: 5d

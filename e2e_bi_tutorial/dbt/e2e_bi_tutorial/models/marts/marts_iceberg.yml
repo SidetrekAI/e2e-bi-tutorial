@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: marts_iceberg
+    database: iceberg
+    schema: project_intermediate
+    tables:
+      - name: int_iceberg__denormalized_orders
+
+models:
+  - name: marts_iceberg__general
+  - name: marts_iceberg__marketing
+  - name: marts_iceberg__payment

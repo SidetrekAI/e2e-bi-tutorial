@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: stg_iceberg
+    database: iceberg
+    schema: raw
+    tables:
+      - name: orders
+      - name: customers
+      - name: products
+      - name: stores
+
+models:
+  - name: stg_iceberg__orders
+  - name: stg_iceberg__customers
+  - name: stg_iceberg__products
+  - name: stg_iceberg__stores
