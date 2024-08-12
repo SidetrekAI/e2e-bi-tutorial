@@ -10,8 +10,15 @@ python = "~3.10.0"
 dbt-core = "^1.8.4"
 dbt-trino = "^1.8.1"
 meltano = "^3.4.2"
+dagster = "^1.6.3"
+dagster-webserver = "^1.6.3"
+dagster-meltano = "^1.5.4"
+dagster-dbt = "^0.23.4"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.dagster]
+module_name = "e2e_bi_tutorial.dagster.e2e_bi_tutorial.e2e_bi_tutorial"
